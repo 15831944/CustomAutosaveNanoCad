@@ -6,20 +6,25 @@ using System.Windows.Forms;
 
 using Teigha.Runtime;
 using Teigha.DatabaseServices;
+using HostMgd.ApplicationServices;
 using Application = HostMgd.ApplicationServices.Application;
 using Document = HostMgd.ApplicationServices.Document;
-
+using HostMgd.EditorInput;
 
 namespace Autosave
 {   
 	public class Autosave1 : IExtensionApplication
     {
-
         public static bool AutosaveOn = true;
-        public static int AutosaveCycleTime = 900000; //время между автосейвами		
+        public static bool RestartAutosaveCycleOnDocSave = false;
+        public static bool SaveAsInAutosaveDirDocOpenedForReadOnly = false;
+        public static int AutosaveCycleTime = 900000; //время между автосейвами	
+        public static int StorageTime = 2;
         public static string DirName = "autosave";
         public static bool CreateDir = false;
         public static string DirPath = @"C:\temp";
+
+        public static Document LastOpenForReadDoc = null;
 
         public void Initialize()
         {
@@ -29,7 +34,51 @@ namespace Autosave
 
             if (AutosaveOn)
                 AutosaveCycle.Start();
+
+            if (RestartAutosaveCycleOnDocSave)
+            {
+                Application.DocumentManager.DocumentActivated += DcDocumentActivated;
+                Application.DocumentManager.DocumentToBeDeactivated += DcDocumentToBeDeactivated;
+
+                var doc = Application.DocumentManager.MdiActiveDocument;
+                var db = doc.Database;
+                db.SaveComplete += new DatabaseIOEventHandler(DbSaveComplete);
+            }
+
+            if (SaveAsInAutosaveDirDocOpenedForReadOnly)
+                Application.DocumentManager.DocumentCreated += new DocumentCollectionEventHandler(DcDocumentCreated);
         }
+
+        public static void DcDocumentCreated(object sender, DocumentCollectionEventArgs e)
+        {
+            var doc = e.Document;
+
+            if (!doc.IsReadOnly)
+                return;
+
+            doc.SendStringToExecute("ReOpenDocReadOnly ", false, false, true);
+        }
+
+        public static void DcDocumentActivated(Object sender, HostMgd.ApplicationServices.DocumentCollectionEventArgs e)
+        {
+            var doc = e.Document;
+            var db = doc.Database;
+            db.SaveComplete += new DatabaseIOEventHandler(DbSaveComplete);
+        }
+
+        public static void DcDocumentToBeDeactivated(Object sender, HostMgd.ApplicationServices.DocumentCollectionEventArgs e)
+        {
+            var doc = e.Document;
+            var db = doc.Database;
+            db.SaveComplete -= new DatabaseIOEventHandler(DbSaveComplete);
+        }
+
+        public static void DbSaveComplete(Object sender, DatabaseIOEventArgs e)
+        {
+            var doc = Application.DocumentManager.MdiActiveDocument;
+            doc.SendStringToExecute("ResetCustomAutosaveCycle ", false, false, true);
+        }
+
         public void AutosaveCycle_onTimeLeft(object sender, EventArgs args)
         {
             AutosaveSendCommand.SendCommand("CustomAutosave ");
@@ -60,9 +109,27 @@ namespace Autosave
                         else
                             Autosave1.AutosaveOn = false;
                     }
+                    else if (l.IndexOf("RestartAutosaveCycleOnDocSave=") != -1)
+                    {
+                        if (l.IndexOf("=True") != -1)
+                            Autosave1.RestartAutosaveCycleOnDocSave = true;
+                        else
+                            Autosave1.RestartAutosaveCycleOnDocSave = false;
+                    }
+                    else if (l.IndexOf("SaveAsInAutosaveDirDocOpenedForReadOnly=") != -1)
+                    {
+                        if (l.IndexOf("=True") != -1)
+                            Autosave1.SaveAsInAutosaveDirDocOpenedForReadOnly = true;
+                        else
+                            Autosave1.SaveAsInAutosaveDirDocOpenedForReadOnly = false;
+                    }
                     else if (l.IndexOf("AutosaveCycleTime=") != -1)
                     {
                         int.TryParse(l.Substring(18), out Autosave1.AutosaveCycleTime);
+                    }
+                    else if (l.IndexOf("StorageTime=") != -1)
+                    {
+                        int.TryParse(l.Substring(12), out Autosave1.StorageTime);
                     }
                     else if (l.IndexOf("DirName=") != -1)
                     {
@@ -85,13 +152,16 @@ namespace Autosave
 
         public static void WriteSettings()
         {
-            var s = new string[5];
-
+            var s = new string[8];
+            
             s[0] = "AutosaveOn=" + Autosave1.AutosaveOn.ToString();
-            s[1] = "AutosaveCycleTime=" + Autosave1.AutosaveCycleTime.ToString();
-            s[2] = "DirName=" + Autosave1.DirName;
-            s[3] = "CreateDir=" + Autosave1.CreateDir.ToString();
-            s[4] = "DirPath=" + Autosave1.DirPath;
+            s[1] = "RestartAutosaveCycleOnDocSave=" + Autosave1.RestartAutosaveCycleOnDocSave.ToString();
+            s[2] = "SaveAsInAutosaveDirDocOpenedForReadOnly=" + Autosave1.SaveAsInAutosaveDirDocOpenedForReadOnly.ToString();
+            s[3] = "AutosaveCycleTime=" + Autosave1.AutosaveCycleTime.ToString();
+            s[4] = "StorageTime=" + Autosave1.StorageTime;
+            s[5] = "DirName=" + Autosave1.DirName;
+            s[6] = "CreateDir=" + Autosave1.CreateDir.ToString();
+            s[7] = "DirPath=" + Autosave1.DirPath;
 
             string path1 = System.Windows.Forms.Application.LocalUserAppDataPath;
             var f = new FileInfo(path1);
@@ -100,7 +170,147 @@ namespace Autosave
             File.WriteAllLines(fo.FullName + @"\" + "AutosaveSettings.cfg", s, Encoding.Unicode);
         }
 
-        public void Terminate() { }
+        public static void Save(ref Document doc)
+        {
+            var ed = doc.Editor;
+
+            ed.WriteMessage("CustomAutosaveRun");
+
+            var db = doc.Database;
+            var hs = HostApplicationServices.Current;
+            string DocPath = hs.FindFile(doc.Name, db, FindFileHint.Default);
+
+            if (string.IsNullOrEmpty(DocPath))
+            {
+                ed.WriteMessage("Документ: " + ((char)34).ToString() + doc.Name + ((char)34).ToString() + " не был ни разу сохранен. Автосохранение отменено.");
+                return;
+            }
+
+            if (!File.Exists(DocPath))
+            {
+                ed.WriteMessage("Документ, путь: " + ((char)34).ToString() + DocPath + ((char)34).ToString() + " не прошел проверку. Автосохранение отменено.");
+                return;
+            }
+
+            string FileNameToAutosave = GetFilenameToAutosave(DocPath, ref ed);
+
+            if (string.IsNullOrEmpty(FileNameToAutosave))
+                return;
+
+            if (File.Exists(FileNameToAutosave))
+            {
+                ed.WriteMessage("Документ уже автосохранен: " + ((char)34).ToString() + FileNameToAutosave + ((char)34).ToString() + " не прошел проверку.");
+                return;
+            }
+
+            if (Path.GetDirectoryName(FileNameToAutosave) == Path.GetDirectoryName(DocPath))
+            {
+                ed.WriteMessage("Документ из папки автосохранени: " + ((char)34).ToString() + doc.Name + ((char)34).ToString() + ". Автосохранение отменено.");
+                return;
+            }
+
+            var fs = new DirectoryInfo(Path.GetDirectoryName(FileNameToAutosave)).GetFiles();
+
+            var dt0 = DateTime.Now;
+
+            foreach (var f in fs)
+            {
+                TimeSpan ts = dt0 - f.LastWriteTime;
+                if (ts.Days > Autosave1.StorageTime)
+                {
+                    try
+                    {
+                        f.Delete();
+                    }
+                    catch
+                    {
+                        ed.WriteMessage("Нет удалось удалить файл: " + ((char)34).ToString() + f.FullName + ((char)34).ToString());
+                    }
+                }
+            }
+               
+            db.SaveAs(FileNameToAutosave, DwgVersion.Current);                
+            
+            ed.WriteMessage(FileNameToAutosave);           
+        }
+
+        public static string GetFilenameToAutosave(string DocPath, ref Editor ed)
+        {
+            DirectoryInfo di = null;
+            if (Autosave1.CreateDir)
+            {
+                var di0 = new FileInfo(DocPath).Directory;
+
+                if (!Directory.Exists(di0.FullName + @"\" + Autosave1.DirName))
+                    di = Directory.CreateDirectory(di0.FullName + @"\" + Autosave1.DirName);
+                else
+                    di = new DirectoryInfo(di0.FullName + @"\" + Autosave1.DirName);
+            }
+            else
+            {
+                if (!Directory.Exists(Autosave1.DirPath + @"\" + Autosave1.DirName))
+                {
+                    ed.WriteMessage("Нет папки: " + ((char)34).ToString() + Autosave1.DirPath + @"\" + Autosave1.DirName + ((char)34).ToString());
+                    return null;
+                }
+
+                di = new DirectoryInfo(Autosave1.DirPath + @"\" + Autosave1.DirName);
+            }
+
+            string n = Path.GetFileNameWithoutExtension(DocPath);
+            string e = Path.GetExtension(DocPath);
+
+            var dt = DateTime.Now;
+
+            string FileNameWithoutExtensionToAutosave = null;
+
+            if (Autosave1.CreateDir)
+            {
+                FileNameWithoutExtensionToAutosave = di.FullName + @"\" + n +
+                "(" + Comands.Get2(dt.Hour.ToString()) + Comands.Get2(dt.Minute.ToString()) + "_" + Comands.Get2(dt.Day.ToString()) +
+                Comands.Get2(dt.Month.ToString()) + dt.Year.ToString() + ")";
+            }
+            else
+            {
+                FileNameWithoutExtensionToAutosave = Autosave1.DirPath + @"\" + Autosave1.DirName + @"\" + n +
+                "(" + Comands.Get2(dt.Hour.ToString()) + Comands.Get2(dt.Minute.ToString()) + "_" + Comands.Get2(dt.Day.ToString()) +
+                Comands.Get2(dt.Month.ToString()) + dt.Year.ToString() + ")";
+            }
+
+            string FileNameToAutosave = FileNameWithoutExtensionToAutosave + e;
+
+            //Проверка можно ли создать файл, не dwg, но длина имени быдет совпадать
+            try
+            {
+                File.WriteAllLines(FileNameWithoutExtensionToAutosave + ".txt", new string[] { "" });
+            }
+            catch
+            {
+                ed.WriteMessage("Нет удалось создать файл: " + ((char)34).ToString() + FileNameToAutosave + ((char)34).ToString());
+                return null;
+            }
+
+            if (File.Exists(FileNameWithoutExtensionToAutosave + ".txt"))
+                File.Delete(FileNameWithoutExtensionToAutosave + ".txt");
+
+            return FileNameToAutosave;
+        }
+
+        public void Terminate()
+        {
+            /*//if (Autosave1.RestartAutosaveCycleOnDocSave)
+            //{
+                Application.DocumentManager.DocumentActivated -= Autosave1.DcDocumentActivated;
+                Application.DocumentManager.DocumentToBeDeactivated -= Autosave1.DcDocumentToBeDeactivated;
+
+                var doc = Application.DocumentManager.MdiActiveDocument;
+                var db = doc.Database;
+                db.SaveComplete -= new DatabaseIOEventHandler(Autosave1.DbSaveComplete);
+            //}
+
+            //if (Autosave1.SaveAsInAutosaveDirDocOpenedForReadOnly)
+                Application.DocumentManager.DocumentCreated -= new DocumentCollectionEventHandler(Autosave1.DcDocumentCreated);*/
+        }
     }
     public static class AutosaveCycle
     {
@@ -111,6 +321,7 @@ namespace Autosave
 
         public static void Start()
         {
+            _shouldStop = false;
             var WaitThr = new Thread(Cycle);
             WaitThr.Start();
         }
@@ -205,118 +416,63 @@ namespace Autosave
                 return;
 
             var doc = Application.DocumentManager.MdiActiveDocument;
-            var ed = doc.Editor;
 
-            ed.WriteMessage("CustomAutosaveRun");
+            if (!doc.IsReadOnly)
+                Autosave1.Save(ref doc);
+        }
+
+        [CommandMethod("ReOpenDocReadOnly", CommandFlags.UsePickSet | CommandFlags.Redraw | CommandFlags.Modal | CommandFlags.Session)]
+        public static void ReOpenDocReadOnlyCmd()
+        {
+            if (Application.DocumentManager.Count == 0)
+                return;
+
+            var doc = Application.DocumentManager.MdiActiveDocument;
+
+            if (!doc.IsReadOnly)
+                return;
 
             var db = doc.Database;
+            var ed = doc.Editor;
             var hs = HostApplicationServices.Current;
-            string FileName = hs.FindFile(doc.Name, db, FindFileHint.Default);
+            string DocPath = hs.FindFile(doc.Name, db, FindFileHint.Default);
 
-            if (string.IsNullOrEmpty(FileName))
-            {
-                ed.WriteMessage("Документ: " + ((char)34).ToString() + doc.Name + ((char)34).ToString() + " не был ни разу сохранен.");
+            string FileNameToAutosave = null;
+            if (!string.IsNullOrEmpty(DocPath))
+                FileNameToAutosave = Autosave1.GetFilenameToAutosave(DocPath, ref ed);
+
+            doc.CloseAndDiscard();
+            //doc.SendStringToExecute("CLOSE ", false, false, true);
+
+            if (string.IsNullOrEmpty(FileNameToAutosave))
                 return;
-            }
 
-            if (!File.Exists(FileName))
+            foreach (Document doc0 in Application.DocumentManager)
             {
-                ed.WriteMessage("Документ, путь: " + ((char)34).ToString() + FileName + ((char)34).ToString() + " не прошел проверку.");
-                return;
+                string DocPath0 = hs.FindFile(doc0.Name, doc0.Database, FindFileHint.Default);
+                if (DocPath0 == FileNameToAutosave)                
+                    doc0.CloseAndDiscard();
             }
-
-            DirectoryInfo di = null;
-            if (Autosave1.CreateDir)
-            {
-                var di0 = new FileInfo(FileName).Directory;
-
-                if (!Directory.Exists(di0.FullName + @"\" + Autosave1.DirName))
-                {
-                    di = Directory.CreateDirectory(di0.FullName + @"\" + Autosave1.DirName);
-                }
-                else
-                {
-                    di = new DirectoryInfo(di0.FullName + @"\" + Autosave1.DirName);
-                }
-            }
-            else
-            {
-                if (!Directory.Exists(Autosave1.DirPath + @"\" + Autosave1.DirName))
-                {
-                    ed.WriteMessage("Нет папки: " + ((char)34).ToString() + Autosave1.DirPath + @"\" + Autosave1.DirName + ((char)34).ToString());
-                    return;
-                }
-
-                di = new DirectoryInfo(Autosave1.DirPath + @"\" + Autosave1.DirName);
-            }
-
-            var fs = di.GetFiles();
-
-            var dt0 = DateTime.Now;
-
-            foreach (var f in fs)
-            {
-                TimeSpan ts = dt0 - f.LastWriteTime;
-                if (ts.Days > 2)
-                {
-                    try
-                    {
-                        f.Delete();
-                    }
-                    catch
-                    {
-                        ed.WriteMessage("Нет удалось удалить файл: " + ((char)34).ToString() + f.FullName + ((char)34).ToString());
-                    }
-                }
-            }
-
-            string n = Path.GetFileNameWithoutExtension(FileName);
-            string e = Path.GetExtension(FileName);
-
-            var dt = DateTime.Now;
-
-            string FileNameWithoutExtensionToAutosave = null;
-
-            if (Autosave1.CreateDir)
-            {
-                FileNameWithoutExtensionToAutosave = di.FullName + @"\" + n +
-                "(" + Get2(dt.Hour.ToString()) + Get2(dt.Minute.ToString()) + "_" + Get2(dt.Day.ToString()) +
-                Get2(dt.Month.ToString()) + dt.Year.ToString() + ")";
-            }
-            else
-            {
-                FileNameWithoutExtensionToAutosave = Autosave1.DirPath + @"\" + Autosave1.DirName + @"\" + n +
-                "(" + Get2(dt.Hour.ToString()) + Get2(dt.Minute.ToString()) + "_" + Get2(dt.Day.ToString()) +
-                Get2(dt.Month.ToString()) + dt.Year.ToString() + ")";
-            }
-
-            string FileNameToAutosave = FileNameWithoutExtensionToAutosave + e;
 
             if (File.Exists(FileNameToAutosave))
-                return;
+            {
+                try
+                {
+                    File.Delete(FileNameToAutosave);
+                }
+                catch {}
+            }
 
-            //Проверка можно ли создать файл, не dwg, но длина имени быдет совпадать
             try
             {
-                File.WriteAllLines(FileNameWithoutExtensionToAutosave + ".txt", new string[] { "" });
+                File.Copy(DocPath, FileNameToAutosave);
             }
             catch
             {
-                ed.WriteMessage("Нет удалось создать файл: " + ((char)34).ToString() + FileNameToAutosave + ((char)34).ToString());
                 return;
             }
 
-            if (File.Exists(FileNameWithoutExtensionToAutosave + ".txt"))
-                File.Delete(FileNameWithoutExtensionToAutosave + ".txt");
-
-            var db2 = new Database();
-            db2 = db;
-
-            db2.SaveAs(FileNameToAutosave, DwgVersion.Current);
-
-            ed.WriteMessage(FileNameToAutosave);
-
-            db2.Dispose();
+            Application.DocumentManager.Open(FileNameToAutosave, true);
         }
 
         [CommandMethod("CustomAutosaveSettings")]
@@ -328,6 +484,10 @@ namespace Autosave
 
             s.checkBox1.Checked = Autosave1.AutosaveOn;
 
+            s.checkBox4.Checked = Autosave1.RestartAutosaveCycleOnDocSave;
+
+            s.checkBox3.Checked = Autosave1.SaveAsInAutosaveDirDocOpenedForReadOnly;
+
             for (int i1 = 1; i1 < 61; i1++)
                 s.comboBox1.Items.Add(i1.ToString());
 
@@ -335,6 +495,11 @@ namespace Autosave
 
             if (AutosaveCycleTimeMin != -1)
                 s.comboBox1.Text = AutosaveCycleTimeMin.ToString();
+
+            for (int i1 = 1; i1 < 31; i1++)
+                s.comboBox2.Items.Add(i1.ToString());
+
+            s.comboBox2.Text = Autosave1.StorageTime.ToString();
 
             s.textBox1.Text = Autosave1.DirName;
 
@@ -345,7 +510,10 @@ namespace Autosave
             var dr = s.ShowDialog();
 
             if (dr != DialogResult.OK)
+            {
+                s.shouldStop = true;
                 return;
+            }
 
             if (!Autosave1.AutosaveOn && s.checkBox1.Checked)
                 AutosaveCycle.Start();
@@ -354,8 +522,41 @@ namespace Autosave
 
             Autosave1.AutosaveOn = s.checkBox1.Checked;
 
+
+            if (!Autosave1.RestartAutosaveCycleOnDocSave && s.checkBox4.Checked)
+            {
+                Application.DocumentManager.DocumentActivated += Autosave1.DcDocumentActivated;
+                Application.DocumentManager.DocumentToBeDeactivated += Autosave1.DcDocumentToBeDeactivated;
+
+                var doc = Application.DocumentManager.MdiActiveDocument;
+                var db = doc.Database;
+                db.SaveComplete += new DatabaseIOEventHandler(Autosave1.DbSaveComplete);
+            }
+            else if (Autosave1.RestartAutosaveCycleOnDocSave && !s.checkBox4.Checked)
+            {
+                Application.DocumentManager.DocumentActivated -= Autosave1.DcDocumentActivated;
+                Application.DocumentManager.DocumentToBeDeactivated -= Autosave1.DcDocumentToBeDeactivated;
+
+                var doc = Application.DocumentManager.MdiActiveDocument;
+                var db = doc.Database;
+                db.SaveComplete -= new DatabaseIOEventHandler(Autosave1.DbSaveComplete);
+            }
+                
+            Autosave1.RestartAutosaveCycleOnDocSave = s.checkBox4.Checked;
+
+
+            if(!Autosave1.SaveAsInAutosaveDirDocOpenedForReadOnly && s.checkBox3.Checked)
+                Application.DocumentManager.DocumentCreated += new DocumentCollectionEventHandler(Autosave1.DcDocumentCreated);
+            else if (Autosave1.SaveAsInAutosaveDirDocOpenedForReadOnly && !s.checkBox3.Checked)
+                Application.DocumentManager.DocumentCreated -= new DocumentCollectionEventHandler(Autosave1.DcDocumentCreated);
+
+            Autosave1.SaveAsInAutosaveDirDocOpenedForReadOnly = s.checkBox3.Checked;
+
+
             int.TryParse(s.comboBox1.Text, out Autosave1.AutosaveCycleTime);
             Autosave1.AutosaveCycleTime = Autosave1.AutosaveCycleTime * 60000;
+
+            int.TryParse(s.comboBox2.Text, out Autosave1.StorageTime);
 
             Autosave1.DirName = s.textBox1.Text;
 
@@ -366,8 +567,14 @@ namespace Autosave
             Autosave1.WriteSettings();
 
             s.shouldStop = true;
+        }
 
-            s.Dispose();
+        [CommandMethod("ResetCustomAutosaveCycle")]
+        public static void ResetCustomAutosaveCycleCmd()
+        {
+            AutosaveCycle.Stop();
+            Thread.Sleep(100);
+            AutosaveCycle.Start();
         }
 
         public static string Get2(string v1)

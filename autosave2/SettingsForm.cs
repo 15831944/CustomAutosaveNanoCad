@@ -17,8 +17,16 @@ namespace Autosave
         {
             InitializeComponent();
 
+            this.FormClosing += new FormClosingEventHandler(SfFormClosing);
+
             var TimerThr = new Thread(CountDown);
             TimerThr.Start();
+        }
+
+        void SfFormClosing(object sender, FormClosingEventArgs e)
+        {
+            shouldStop = true;
+            Thread.Sleep(100);
         }
 
         void CountDown()
@@ -52,6 +60,12 @@ namespace Autosave
                 return;
             }
 
+            if (comboBox2.SelectedIndex == -1)
+            {
+                MessageBox.Show("Время хранения автосохраненных документов не задано");
+                return;
+            }
+
             if (string.IsNullOrEmpty(textBox1.Text))
             {
                 MessageBox.Show("Имя паки автосохранения не задано");
@@ -67,11 +81,11 @@ namespace Autosave
                 }
             }
 
+            shouldStop = true;
             DialogResult = DialogResult.OK;
         }
 
 
-
-
     }
 }
+

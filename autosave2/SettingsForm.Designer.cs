@@ -68,15 +68,16 @@ namespace Autosave
             // 
             // comboBox1
             // 
+            this.comboBox1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(248, 77);
+            this.comboBox1.Location = new System.Drawing.Point(247, 106);
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(66, 24);
             this.comboBox1.TabIndex = 1;
             // 
             // label1
             // 
-            this.label1.Location = new System.Drawing.Point(11, 80);
+            this.label1.Location = new System.Drawing.Point(10, 109);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(231, 23);
             this.label1.TabIndex = 2;
@@ -85,7 +86,7 @@ namespace Autosave
             // 
             // label2
             // 
-            this.label2.Location = new System.Drawing.Point(320, 80);
+            this.label2.Location = new System.Drawing.Point(319, 109);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(40, 23);
             this.label2.TabIndex = 3;
@@ -94,7 +95,7 @@ namespace Autosave
             // 
             // label3
             // 
-            this.label3.Location = new System.Drawing.Point(-15, 148);
+            this.label3.Location = new System.Drawing.Point(-16, 177);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(231, 23);
             this.label3.TabIndex = 2;
@@ -103,14 +104,14 @@ namespace Autosave
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(196, 145);
+            this.textBox1.Location = new System.Drawing.Point(195, 174);
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(230, 22);
             this.textBox1.TabIndex = 4;
             // 
             // label4
             // 
-            this.label4.Location = new System.Drawing.Point(10, 222);
+            this.label4.Location = new System.Drawing.Point(10, 247);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(231, 23);
             this.label4.TabIndex = 2;
@@ -119,14 +120,14 @@ namespace Autosave
             // 
             // textBox2
             // 
-            this.textBox2.Location = new System.Drawing.Point(15, 249);
+            this.textBox2.Location = new System.Drawing.Point(15, 274);
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(783, 22);
             this.textBox2.TabIndex = 4;
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(252, 216);
+            this.button1.Location = new System.Drawing.Point(252, 241);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(546, 23);
             this.button1.TabIndex = 5;
@@ -136,19 +137,19 @@ namespace Autosave
             // 
             // checkBox2
             // 
-            this.checkBox2.Location = new System.Drawing.Point(16, 186);
+            this.checkBox2.Location = new System.Drawing.Point(16, 211);
             this.checkBox2.Name = "checkBox2";
             this.checkBox2.Size = new System.Drawing.Size(814, 24);
             this.checkBox2.TabIndex = 0;
             this.checkBox2.Text = "Создавать папку автосохранения в папке документа (настройка: \"Положение папки авт" +
-            "осохранения\" игнорируется)";
+    "осохранения\" игнорируется)";
             this.checkBox2.UseVisualStyleBackColor = true;
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(601, 290);
+            this.button2.Location = new System.Drawing.Point(601, 313);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(197, 52);
+            this.button2.Size = new System.Drawing.Size(197, 35);
             this.button2.TabIndex = 5;
             this.button2.Text = "Применить";
             this.button2.UseVisualStyleBackColor = true;
@@ -156,24 +157,25 @@ namespace Autosave
             // 
             // checkBox3
             // 
-            this.checkBox3.Location = new System.Drawing.Point(14, 42);
+            this.checkBox3.Location = new System.Drawing.Point(12, 72);
             this.checkBox3.Name = "checkBox3";
-            this.checkBox3.Size = new System.Drawing.Size(485, 24);
+            this.checkBox3.Size = new System.Drawing.Size(701, 24);
             this.checkBox3.TabIndex = 6;
-            this.checkBox3.Text = "При открытии документа для чтения автосохранять";
+            this.checkBox3.Text = "При открытии документа для чтения, cохранять документ в папку автосохранения";
             this.checkBox3.UseVisualStyleBackColor = true;
             // 
             // comboBox2
             // 
+            this.comboBox2.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBox2.FormattingEnabled = true;
-            this.comboBox2.Location = new System.Drawing.Point(320, 110);
+            this.comboBox2.Location = new System.Drawing.Point(319, 139);
             this.comboBox2.Name = "comboBox2";
             this.comboBox2.Size = new System.Drawing.Size(66, 24);
             this.comboBox2.TabIndex = 1;
             // 
             // label5
             // 
-            this.label5.Location = new System.Drawing.Point(392, 113);
+            this.label5.Location = new System.Drawing.Point(391, 142);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(51, 23);
             this.label5.TabIndex = 3;
@@ -182,7 +184,7 @@ namespace Autosave
             // 
             // label6
             // 
-            this.label6.Location = new System.Drawing.Point(4, 113);
+            this.label6.Location = new System.Drawing.Point(3, 142);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(313, 23);
             this.label6.TabIndex = 2;
@@ -191,7 +193,7 @@ namespace Autosave
             // 
             // checkBox4
             // 
-            this.checkBox4.Location = new System.Drawing.Point(214, 12);
+            this.checkBox4.Location = new System.Drawing.Point(12, 42);
             this.checkBox4.Name = "checkBox4";
             this.checkBox4.Size = new System.Drawing.Size(485, 24);
             this.checkBox4.TabIndex = 6;
@@ -202,18 +204,18 @@ namespace Autosave
             // 
             this.label7.Font = new System.Drawing.Font("Arial", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.label7.ForeColor = System.Drawing.Color.Green;
-            this.label7.Location = new System.Drawing.Point(601, 13);
+            this.label7.Location = new System.Drawing.Point(705, 12);
             this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(193, 42);
+            this.label7.Size = new System.Drawing.Size(90, 42);
             this.label7.TabIndex = 7;
-            this.label7.Text = "00:00:00";
+            this.label7.Text = "00:00";
             this.label7.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(807, 356);
+            this.ClientSize = new System.Drawing.Size(807, 361);
             this.Controls.Add(this.label7);
             this.Controls.Add(this.checkBox4);
             this.Controls.Add(this.checkBox3);
@@ -238,13 +240,14 @@ namespace Autosave
             this.Text = "Настройки автосохранения";
             this.ResumeLayout(false);
             this.PerformLayout();
+
         }
         private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.CheckBox checkBox4;
+        public System.Windows.Forms.CheckBox checkBox4;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.Label label5;
         public System.Windows.Forms.ComboBox comboBox2;
-        private System.Windows.Forms.CheckBox checkBox3;
+        public System.Windows.Forms.CheckBox checkBox3;
         private System.Windows.Forms.Button button2;
         public System.Windows.Forms.CheckBox checkBox2;
         private System.Windows.Forms.Button button1;
