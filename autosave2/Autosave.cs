@@ -14,7 +14,6 @@ namespace Autosave
 {   
 	public class Autosave1 : IExtensionApplication
     {
-
         public static bool AutosaveOn = true;
         public static int AutosaveCycleTime = 900000; //время между автосейвами		
         public static string DirName = "autosave";

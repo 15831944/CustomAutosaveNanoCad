@@ -141,7 +141,7 @@ namespace Autosave
             this.checkBox2.Size = new System.Drawing.Size(814, 24);
             this.checkBox2.TabIndex = 0;
             this.checkBox2.Text = "Создавать папку автосохранения в папке документа (настройка: \"Положение папки авт" +
-            "осохранения\" игнорируется)";
+    "осохранения\" игнорируется)";
             this.checkBox2.UseVisualStyleBackColor = true;
             // 
             // button2
@@ -202,11 +202,11 @@ namespace Autosave
             // 
             this.label7.Font = new System.Drawing.Font("Arial", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.label7.ForeColor = System.Drawing.Color.Green;
-            this.label7.Location = new System.Drawing.Point(601, 13);
+            this.label7.Location = new System.Drawing.Point(659, 12);
             this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(193, 42);
+            this.label7.Size = new System.Drawing.Size(139, 42);
             this.label7.TabIndex = 7;
-            this.label7.Text = "00:00:00";
+            this.label7.Text = "00:00";
             this.label7.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // SettingsForm
@@ -238,6 +238,7 @@ namespace Autosave
             this.Text = "Настройки автосохранения";
             this.ResumeLayout(false);
             this.PerformLayout();
+
         }
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.CheckBox checkBox4;
