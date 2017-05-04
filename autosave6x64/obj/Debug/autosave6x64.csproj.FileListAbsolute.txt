@@ -1,0 +1,12 @@
+D:\DLL2\autosave2\autosave6x64\bin\Debug\autosave6x64.dll
+D:\DLL2\autosave2\autosave6x64\bin\Debug\autosave6x64.pdb
+D:\DLL2\autosave2\autosave6x64\bin\Debug\hostdbmgd.dll
+D:\DLL2\autosave2\autosave6x64\bin\Debug\hostmgd.dll
+D:\DLL2\autosave2\autosave6x64\obj\Debug\autosave6x64.csprojResolveAssemblyReference.cache
+D:\DLL2\autosave2\autosave6x64\obj\Debug\Interop.nanoCAD.dll
+D:\DLL2\autosave2\autosave6x64\obj\Debug\Interop.OdaX.dll
+D:\DLL2\autosave2\autosave6x64\obj\Debug\autosave6x64.csproj.ResolveComReference.cache
+D:\DLL2\autosave2\autosave6x64\obj\Debug\autosave6x64.dll
+D:\DLL2\autosave2\autosave6x64\obj\Debug\autosave6x64.pdb
+D:\DLL2\autosave2\autosave6x64\bin\Debug\Interop.nanoCAD.dll
+D:\DLL2\autosave2\autosave6x64\bin\Debug\Interop.OdaX.dll

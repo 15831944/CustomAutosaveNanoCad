@@ -1,0 +1,9 @@
+D:\DLL2\autosave2\autosave81x64\obj\Debug\autosave81x64.csprojResolveAssemblyReference.cache
+D:\DLL2\autosave2\autosave81x64\obj\Debug\Interop.nanoCAD.dll
+D:\DLL2\autosave2\autosave81x64\obj\Debug\Interop.OdaX.dll
+D:\DLL2\autosave2\autosave81x64\obj\Debug\autosave81x64.csproj.ResolveComReference.cache
+D:\DLL2\autosave2\autosave81x64\bin\Debug\autosave81x64.dll
+D:\DLL2\autosave2\autosave81x64\bin\Debug\autosave81x64.pdb
+D:\DLL2\autosave2\autosave81x64\obj\Debug\autosave81x64.dll
+D:\DLL2\autosave2\autosave81x64\obj\Debug\autosave81x64.pdb
+D:\DLL2\autosave2\autosave81x64\bin\Debug\Interop.nanoCAD.dll
